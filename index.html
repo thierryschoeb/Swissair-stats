@@ -1867,8 +1867,8 @@ function renderAll() {
 const ZEP_URL = 'https://www.zep.ch/index.php?target=saison';
 const LIGA_CACHE_KEY = 'ehc_liga_cache_2627';
 const TEAM_NAME = 'swissair';
-// Adresse des Cloudflare Workers (nach dem Einrichten hier eintragen, z.B. 'https://zep.DEINNAME.workers.dev')
-const LIGA_PROXY_URL = 'WORKER_URL_HIER_EINTRAGEN';
+// liga.json wird von GitHub Actions regelmässig aus zep.ch aktualisiert (liegt neben index.html)
+const LIGA_PROXY_URL = './liga.json';
 
 function showTab(id, btn) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1922,7 +1922,7 @@ async function fetchLigaData() {
 
   // Try CORS proxy approaches
   const proxies = [
-    ...(LIGA_PROXY_URL.startsWith('https://') ? [LIGA_PROXY_URL] : []),
+    `${LIGA_PROXY_URL}?v=${Date.now()}`,
     `https://api.allorigins.win/get?url=${encodeURIComponent(ZEP_URL)}`,
     `https://corsproxy.io/?${encodeURIComponent(ZEP_URL)}`,
   ];
