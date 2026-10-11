@@ -1129,8 +1129,8 @@ function renderStats() {
     if (typeof bv === 'string') bv = bv.toLowerCase();
     if (av < bv) return s.dir==='asc' ? -1 : 1;
     if (av > bv) return s.dir==='asc' ? 1 : -1;
-    // Tiebreak: more goals first
-    return (b.g||0) - (a.g||0);
+    // Tiebreak: more goals first, then fewer games first
+    return (b.g||0) - (a.g||0) || (a.gp||0) - (b.gp||0);
   });
 
   const skaterBody = document.getElementById('skaterBody');
@@ -1275,7 +1275,7 @@ function renderTop() {
     .filter(p => p.pos !== 'TH')
     .map(p => ({...p, ...getPlayerStats(p.id)}))
     .filter(p => p.gp > 0)
-    .sort((a,b) => (b[cat]||0) - (a[cat]||0) || (b.g||0) - (a.g||0))
+    .sort((a,b) => (b[cat]||0) - (a[cat]||0) || (b.g||0) - (a.g||0) || (a.gp||0) - (b.gp||0))
     .slice(0, 15);
 
   // Also add goalies if pts
@@ -1284,7 +1284,7 @@ function renderTop() {
     .map(p => ({...p, ...getPlayerStats(p.id)}))
     .filter(p => p.gp > 0 && (p[cat]||0) > 0);
 
-  const all = [...data, ...goalies].sort((a,b)=>(b[cat]||0)-(a[cat]||0) || (b.g||0)-(a.g||0)).slice(0,15);
+  const all = [...data, ...goalies].sort((a,b)=>(b[cat]||0)-(a[cat]||0) || (b.g||0)-(a.g||0) || (a.gp||0)-(b.gp||0)).slice(0,15);
 
   const labels = all.map(p => `#${p.nr} ${p.name.split(' ')[0]}`);
   const vals   = all.map(p => +(p[cat]||0).toFixed(2));
@@ -1321,12 +1321,19 @@ function renderTop() {
   list.innerHTML = '';
   const max = vals[0] || 1;
   const medals = ['🥇','🥈','🥉'];
+  // Gleicher Wert und gleiche Tore = gleicher Rang
+  const ranks = all.map((p,i) => {
+    let r = i;
+    while (r > 0 && (all[r-1][cat]||0) === (p[cat]||0) && (all[r-1].g||0) === (p.g||0) && (all[r-1].gp||0) === (p.gp||0)) r--;
+    return r;
+  });
   all.forEach((p,i) => {
+    const rk = ranks[i];
     const v = +(p[cat]||0);
     const div = document.createElement('div');
     div.className = 'lbi';
     div.innerHTML = `
-      <div class="lbi-rank">${medals[i] || `<span style="font-size:.9rem;color:var(--muted)">${i+1}</span>`}</div>
+      <div class="lbi-rank">${medals[rk] || `<span style="font-size:.9rem;color:var(--muted)">${rk+1}</span>`}</div>
       <div class="lbi-info">
         <div class="lbi-name">#${p.nr} ${p.name}</div>
         <div class="lbi-sub">${p.gp} Spiele · <span class="pb pb-${p.pos}">${p.pos}</span></div>
@@ -1817,11 +1824,16 @@ function renderLastGameScorers() {
   }
   scorers.sort((a,b) => b.pts - a.pts || b.g - a.g);
 
+  const sRanks = scorers.map((s,i) => {
+    let r = i;
+    while (r > 0 && scorers[r-1].pts === s.pts && scorers[r-1].g === s.g) r--;
+    return r;
+  });
   const rows = scorers.length === 0
     ? `<div class="scorer-empty">Keine Scorer eingetragen</div>`
     : scorers.map((s, i) => `
         <div class="scorer-row">
-          <div class="scorer-rank">${i === 0 ? '⭐' : i + 1}</div>
+          <div class="scorer-rank">${sRanks[i] === 0 ? '⭐' : sRanks[i] + 1}</div>
           <div class="scorer-name"><small>#${s.nr}</small> ${s.name}</div>
           <div class="scorer-pts">
             ${s.g > 0 ? `<span class="scorer-g">${s.g}T</span>` : ''}
