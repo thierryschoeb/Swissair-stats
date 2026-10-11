@@ -1275,7 +1275,7 @@ function renderTop() {
     .filter(p => p.pos !== 'TH')
     .map(p => ({...p, ...getPlayerStats(p.id)}))
     .filter(p => p.gp > 0)
-    .sort((a,b) => (b[cat]||0) - (a[cat]||0))
+    .sort((a,b) => (b[cat]||0) - (a[cat]||0) || (b.g||0) - (a.g||0))
     .slice(0, 15);
 
   // Also add goalies if pts
@@ -1284,7 +1284,7 @@ function renderTop() {
     .map(p => ({...p, ...getPlayerStats(p.id)}))
     .filter(p => p.gp > 0 && (p[cat]||0) > 0);
 
-  const all = [...data, ...goalies].sort((a,b)=>(b[cat]||0)-(a[cat]||0)).slice(0,15);
+  const all = [...data, ...goalies].sort((a,b)=>(b[cat]||0)-(a[cat]||0) || (b.g||0)-(a.g||0)).slice(0,15);
 
   const labels = all.map(p => `#${p.nr} ${p.name.split(' ')[0]}`);
   const vals   = all.map(p => +(p[cat]||0).toFixed(2));
