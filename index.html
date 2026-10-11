@@ -1,0 +1,2123 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0a0a0a">
+<title>ZEP · EHC Swissair – Statistik 2026/27</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+:root {
+  --bg: #0a0a0a;
+  --card: #141414;
+  --card2: #1e1e1e;
+  --border: #3a1010;
+  --accent: #C8001E;
+  --gold: #C8001E;
+  --gold2: #ff3344;
+  --text: #f0f0f0;
+  --muted: #888888;
+  --green: #22c55e;
+  --red: #ff4444;
+  --radius: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;}
+#bg-logo{
+  position:fixed;
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  width:min(72vw,72vh);
+  height:min(72vw,72vh);
+  background:url('https://ehc-swissair.ch/wp-content/uploads/2024/03/logo-ehc-swissair-200.png') center/contain no-repeat;
+  opacity:0.18;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* HEADER */
+header{
+  background:linear-gradient(160deg,#0a0000 0%,#1a0006 60%,#0a0000 100%);
+  border-bottom:2px solid var(--gold);
+  padding:16px 24px;
+  display:flex;align-items:center;gap:18px;
+  position:sticky;top:0;z-index:50;
+}
+.logo{
+  width:54px;height:54px;background:var(--gold);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:900;font-size:18px;color:#fff;flex-shrink:0;
+  box-shadow:0 0 20px rgba(200,0,30,0.5);
+}
+header h1{font-size:1.45rem;font-weight:800;letter-spacing:-0.3px;line-height:1.1;}
+header .sub{color:var(--gold);font-size:0.82rem;margin-top:3px;font-weight:600;}
+
+/* SUMMARY STRIP */
+.summary{
+  display:flex;gap:0;background:var(--card);
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;padding:0 24px;
+}
+.sum-item{
+  display:flex;flex-direction:column;align-items:center;
+  padding:14px 24px;border-right:1px solid var(--border);
+  min-width:100px;flex-shrink:0;
+}
+.sum-item:last-child{border-right:none;}
+.sum-val{font-size:1.8rem;font-weight:800;color:var(--gold);line-height:1;}
+.sum-lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-top:4px;}
+
+/* NAV */
+nav{
+  display:flex;background:var(--card);
+  border-bottom:1px solid var(--border);
+  padding:0 24px;overflow-x:auto;
+}
+nav button{
+  background:none;border:none;color:var(--muted);
+  padding:13px 20px;cursor:pointer;font-size:0.86rem;font-weight:600;
+  border-bottom:3px solid transparent;white-space:nowrap;transition:all .2s;
+}
+nav button.active{color:var(--gold);border-bottom-color:var(--gold);}
+nav button:hover:not(.active){color:var(--text);}
+
+/* MAIN */
+main{padding:22px 24px;max-width:1100px;margin:0 auto;}
+.tab{display:none;}.tab.active{display:block;}
+
+/* SECTION HEADER */
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;}
+.sh h2{font-size:1rem;font-weight:700;}
+
+/* BUTTONS */
+.btn{
+  background:var(--accent);color:#fff;border:none;
+  padding:8px 18px;border-radius:7px;cursor:pointer;
+  font-size:0.83rem;font-weight:700;transition:all .2s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{filter:brightness(1.15);}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-sm{padding:5px 12px;font-size:0.76rem;}
+.btn-danger{background:#4a1515;color:#fca5a5;border:1px solid #7f1d1d;}
+.btn-danger:hover{background:#7f1d1d;}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted);}
+.btn-ghost:hover{border-color:var(--text);color:var(--text);}
+
+/* TABLES */
+.tw{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+thead th{
+  background:var(--card2);padding:9px 12px;
+  text-align:left;font-size:0.7rem;text-transform:uppercase;
+  letter-spacing:0.5px;color:var(--muted);white-space:nowrap;
+  cursor:pointer;user-select:none;
+}
+thead th:hover{color:var(--text);}
+thead th.s-asc::after{content:' ↑';color:var(--gold);}
+thead th.s-desc::after{content:' ↓';color:var(--gold);}
+tbody tr{border-top:1px solid var(--border);transition:background .12s;}
+tbody tr:hover{background:var(--card2);}
+tbody td{padding:9px 12px;font-size:0.86rem;}
+.nr{text-align:right;font-variant-numeric:tabular-nums;}
+.tc{text-align:center;}
+.pts{font-weight:700;color:var(--gold2);}
+
+/* Position badges */
+.pb{display:inline-block;padding:2px 7px;border-radius:4px;font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.pb-TH{background:#2d1c00;color:#fbbf24;}   /* Torhüter: Amber */
+.pb-V {background:#0f1f0f;color:#4ade80;}   /* Verteidiger: Grün */
+.pb-ST{background:#2a0008;color:#ff4466;}   /* Stürmer: Rot */
+
+/* Group row */
+.grp td{
+  background:#1a0006;color:var(--gold);font-weight:700;
+  font-size:0.72rem;text-transform:uppercase;letter-spacing:0.5px;
+  padding:5px 12px;
+}
+
+/* Result badge */
+.rb{display:inline-block;padding:3px 9px;border-radius:5px;font-weight:700;font-size:0.78rem;}
+.rb-W{background:#052e16;color:#86efac;}
+.rb-L{background:#450a0a;color:#fca5a5;}
+.rb-D{background:#1e1e1e;color:#cccccc;}
+.rb-F{background:#3a0010;color:#ffb3be;}
+
+/* MODAL */
+.overlay{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,0.85);z-index:200;
+  overflow-y:auto;padding:20px;
+}
+.overlay.open{display:flex;justify-content:center;align-items:flex-start;}
+.modal{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:14px;padding:26px;width:100%;max-width:720px;margin:auto;
+}
+.modal h2{font-size:1.1rem;font-weight:700;margin-bottom:18px;color:var(--gold);}
+
+/* FORM */
+.fr{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:14px;}
+.fg{display:flex;flex-direction:column;gap:5px;}
+label{font-size:0.72rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+input,select{
+  background:var(--card2);border:1px solid var(--border);
+  color:var(--text);padding:7px 11px;border-radius:7px;font-size:0.86rem;width:100%;
+}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+input[type=number]{text-align:center;}
+input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--gold);}
+
+/* Player stats table in modal */
+.pst{border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-top:8px;max-height:380px;overflow-y:auto;}
+.psh,.psr{display:grid;gap:6px;padding:7px 10px;align-items:center;}
+.psh{
+  grid-template-columns:20px 52px 1fr 52px 52px 52px 52px;
+  background:var(--card2);font-size:0.68rem;color:var(--muted);
+  text-transform:uppercase;font-weight:700;letter-spacing:.3px;
+  position:sticky;top:0;z-index:1;
+}
+.psr{
+  grid-template-columns:20px 52px 1fr 52px 52px 52px 52px;
+  border-top:1px solid var(--border);
+}
+.psr:hover{background:rgba(255,255,255,.03);}
+.psr input[type=number]{padding:4px 4px;font-size:0.82rem;}
+
+/* Goalie modal rows */
+.psh-g{grid-template-columns:20px 52px 1fr 52px 52px 52px 60px;}
+.psr-g{grid-template-columns:20px 52px 1fr 52px 52px 52px 60px;}
+
+/* LEADERBOARD */
+.lb{display:grid;gap:8px;}
+.lbi{
+  display:flex;align-items:center;gap:14px;
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:13px 16px;
+}
+.lbi-rank{font-size:1.2rem;width:32px;text-align:center;flex-shrink:0;}
+.lbi-info{flex:1;min-width:0;}
+.lbi-name{font-weight:700;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lbi-sub{font-size:0.72rem;color:var(--muted);margin-top:1px;}
+.lbi-bar{background:var(--card2);border-radius:3px;height:5px;overflow:hidden;margin-top:6px;}
+.lbi-fill{height:5px;border-radius:3px;background:var(--gold);transition:width .4s ease;}
+.lbi-val{font-size:1.4rem;font-weight:800;color:var(--gold);width:48px;text-align:right;flex-shrink:0;}
+
+/* GAME CARDS */
+.gc{
+  background:var(--card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:14px 18px;
+  margin-bottom:8px;display:flex;align-items:center;gap:14px;
+  cursor:pointer;transition:border-color .2s;
+}
+.gc:hover{border-color:var(--accent);}
+.gc-date{color:var(--muted);font-size:0.76rem;width:72px;flex-shrink:0;}
+.gc-teams{flex:1;}
+.gc-home{font-weight:700;font-size:0.9rem;}
+.gc-away{color:var(--muted);font-size:0.8rem;}
+.gc-score{font-size:1.35rem;font-weight:800;min-width:80px;text-align:center;font-variant-numeric:tabular-nums;}
+.gc-actions{display:flex;gap:6px;flex-shrink:0;}
+
+/* CHART container */
+.cc{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:18px;}
+.cc h3{font-size:0.85rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:14px;}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:52px 20px;color:var(--muted);}
+.empty .ico{font-size:3rem;margin-bottom:10px;}
+.empty p{font-size:0.9rem;}
+
+/* PLAYER MANAGEMENT */
+.pm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:16px;}
+.pm-card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;}
+.pm-nr{font-size:1.1rem;font-weight:800;color:var(--gold);width:36px;text-align:center;}
+.pm-info{flex:1;}
+.pm-name{font-size:0.85rem;font-weight:600;}
+.pm-pos{font-size:0.7rem;color:var(--muted);}
+
+/* DETAIL MODAL */
+.detail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:16px;}
+.dg-card{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;}
+.dg-val{font-size:1.6rem;font-weight:800;color:var(--gold);line-height:1;}
+.dg-lbl{font-size:0.68rem;color:var(--muted);text-transform:uppercase;margin-top:3px;}
+
+/* TABS in modal */
+.mtabs{display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:14px;}
+.mtab{background:none;border:none;color:var(--muted);padding:8px 16px;cursor:pointer;font-size:0.82rem;font-weight:600;border-bottom:2px solid transparent;}
+.mtab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+/* Utility */
+.divider{border:none;border-top:1px solid var(--border);margin:20px 0;}
+.flex{display:flex;gap:8px;align-items:center;}
+.note{font-size:0.78rem;color:var(--muted);margin-top:6px;}
+.warn{color:#f59e0b;font-size:0.78rem;margin-top:4px;}
+
+/* LIGA TABLE TAB */
+.liga-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap;}
+.liga-toolbar h2{font-size:1rem;font-weight:700;flex:1;}
+.liga-badge{background:#3a0010;color:#ffb3be;padding:3px 10px;border-radius:5px;font-size:.75rem;font-weight:700;}
+.liga-frame-wrap{position:relative;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);background:#fff;min-height:600px;}
+.liga-frame-wrap iframe{width:100%;height:720px;border:none;display:block;}
+.liga-fallback{display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center;min-height:300px;background:var(--card);border-radius:var(--radius);border:1px solid var(--border);}
+.liga-fallback .ico{font-size:3rem;margin-bottom:12px;}
+.liga-fallback p{color:var(--muted);font-size:.9rem;margin-bottom:16px;}
+.liga-last-update{font-size:.72rem;color:var(--muted);margin-top:8px;text-align:right;}
+.liga-cached{border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);}
+.liga-cached table{width:100%;border-collapse:collapse;}
+.liga-cached thead th{background:var(--card2);padding:8px 12px;font-size:.7rem;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);text-align:left;}
+.liga-cached thead th.nr{text-align:right;}
+.liga-cached tbody tr{border-top:1px solid var(--border);transition:background .12s;}
+.liga-cached tbody tr:hover{background:var(--card2);}
+.liga-cached tbody td{padding:9px 12px;font-size:.86rem;}
+.liga-cached tbody td.nr{text-align:right;font-variant-numeric:tabular-nums;}
+.liga-cached tr.hl{background:#2a0008 !important;border-left:3px solid var(--gold);}
+.liga-cached tr.hl td.team-name{color:var(--gold);font-weight:700;}
+
+/* ─── TOUCH ──────────────────────────────── */
+button,input,select{
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+body{-webkit-text-size-adjust:100%;}
+
+/* ─── MOBILE (≤600px) ────────────────────── */
+@media(max-width:600px){
+
+  /* Header */
+  header{padding:10px 14px;gap:10px;}
+  .logo{width:40px;height:40px;font-size:13px;}
+  header h1{font-size:1rem;}
+  header .sub{font-size:.72rem;}
+  header .btn{font-size:.75rem;padding:7px 12px;}
+
+  /* Summary strip — compact, scrollable */
+  .summary{padding:0 8px;}
+  .sum-item{padding:10px 14px;min-width:72px;}
+  .sum-val{font-size:1.4rem;}
+  .sum-lbl{font-size:.6rem;}
+
+  /* Nav */
+  nav{padding:0 6px;}
+  nav button{padding:11px 12px;font-size:.78rem;}
+
+  /* Main */
+  main{padding:12px 10px;max-width:100%;}
+
+  /* Tables: horizontal scroll + compact cells */
+  .tw{border-radius:7px;}
+  thead th{padding:7px 8px;font-size:.62rem;}
+  tbody td{padding:7px 8px;font-size:.8rem;}
+
+  /* Game cards */
+  .gc{padding:10px 12px;gap:8px;}
+  .gc-date{width:60px;font-size:.7rem;}
+  .gc-home{font-size:.82rem;}
+  .gc-away{font-size:.74rem;}
+  .gc-score{font-size:1rem;min-width:60px;}
+  .gc-actions{gap:4px;}
+  .gc-actions .btn{padding:5px 9px;font-size:.7rem;}
+
+  /* Games layout: single column */
+  .games-layout{grid-template-columns:1fr;}
+
+  /* Scorer panel: full width, not sticky */
+  .scorer-panel{position:static;}
+
+  /* Modal: full screen */
+  .overlay{padding:0;}
+  .overlay.open{align-items:flex-end;}
+  .modal{
+    border-radius:18px 18px 0 0;
+    max-height:92dvh;
+    overflow-y:auto;
+    padding:18px 14px 30px;
+    max-width:100%;
+  }
+
+  /* Player input grid in modal — more compact */
+  .psh,.psr{
+    grid-template-columns:16px 38px 1fr 36px 36px 36px 36px;
+    gap:4px;padding:5px 6px;
+  }
+  .psh-g,.psr-g{
+    grid-template-columns:16px 38px 1fr 36px 36px 36px 42px;
+    gap:4px;
+  }
+  .psr input[type=number]{padding:3px 2px;font-size:.75rem;}
+
+  /* Modal stats scrollable box */
+  .pst{max-height:280px;}
+
+  /* Form grid: single column */
+  .fr{grid-template-columns:1fr 1fr;}
+
+  /* Leaderboard */
+  .lbi{padding:10px 12px;gap:10px;}
+  .lbi-val{font-size:1.2rem;}
+
+  /* Detail grid */
+  .detail-grid{grid-template-columns:repeat(2,1fr);}
+
+  /* Player management grid */
+  .pm-grid{grid-template-columns:1fr 1fr;}
+  .pm-name{font-size:.78rem;}
+
+  /* Charts: less height */
+  .cc{padding:12px;}
+
+  /* Bottom sync dot: avoid home indicator */
+  #syncDot{bottom:calc(14px + env(safe-area-inset-bottom));}
+
+  /* Note text */
+  .note{font-size:.68rem;}
+
+  /* Section header */
+  .sh h2{font-size:.9rem;}
+  .sh .btn{font-size:.75rem;padding:6px 11px;}
+}
+
+/* GAMES LAYOUT */
+.games-layout{
+  display:grid;
+  grid-template-columns:1fr 290px;
+  gap:20px;
+  align-items:start;
+}
+
+/* SCORER PANEL */
+.scorer-panel{
+  background:var(--card);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  overflow:hidden;
+  position:sticky;
+  top:130px;
+}
+.scorer-header{
+  background:linear-gradient(135deg,#2a0008 0%,#0a0000 100%);
+  border-bottom:2px solid var(--gold);
+  padding:14px 16px;
+}
+.scorer-header .sh-meta{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700;margin-bottom:6px;}
+.scorer-matchup{font-size:.88rem;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:8px;}
+.scorer-title{padding:10px 16px 5px;font-size:.72rem;text-transform:uppercase;letter-spacing:.5px;font-weight:700;color:var(--muted);}
+.scorer-list{padding:0 0 8px;}
+.scorer-row{display:flex;align-items:center;gap:10px;padding:9px 16px;border-top:1px solid var(--border);transition:background .12s;}
+.scorer-row:hover{background:var(--card2);}
+.scorer-rank{width:20px;text-align:center;font-size:.75rem;color:var(--muted);font-weight:700;flex-shrink:0;}
+.scorer-name{flex:1;font-size:.85rem;font-weight:600;}
+.scorer-name small{color:var(--muted);font-size:.72rem;}
+.scorer-pts{display:flex;gap:5px;align-items:center;flex-shrink:0;}
+.scorer-g{background:#052e16;color:#86efac;padding:2px 7px;border-radius:5px;font-size:.73rem;font-weight:700;}
+.scorer-a{background:#0c2040;color:#93c5fd;padding:2px 7px;border-radius:5px;font-size:.73rem;font-weight:700;}
+.scorer-total{color:var(--gold2);font-weight:700;font-size:.78rem;min-width:38px;text-align:right;}
+.scorer-empty{padding:20px 16px;text-align:center;color:var(--muted);font-size:.83rem;}
+#lastGameScorersTab .scorer-panel{max-width:480px;}
+
+/* LOADING OVERLAY */
+#loadingOverlay{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:999;gap:16px;
+}
+#loadingOverlay .spin{
+  width:40px;height:40px;border:3px solid var(--border);
+  border-top-color:var(--accent);border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+#loadingOverlay p{color:var(--muted);font-size:.9rem;}
+#syncDot{
+  position:fixed;bottom:14px;right:16px;
+  font-size:.72rem;color:var(--muted);z-index:10;
+  display:flex;align-items:center;gap:5px;
+}
+#syncDot span{
+  width:8px;height:8px;border-radius:50%;background:var(--green);
+  display:inline-block;
+}
+</style>
+</head>
+<body>
+
+<!-- PIN Protection Overlay -->
+<div id="pinOverlay" style="
+  position:fixed;inset:0;z-index:99999;
+  background:#0a0a0a;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;
+">
+  <img src="https://ehc-swissair.ch/wp-content/uploads/2022/09/Logo_EHC_Swissair.png"
+       onerror="this.style.display='none'"
+       style="width:90px;height:90px;object-fit:contain;border-radius:50%;border:2px solid #C8001E;">
+  <div style="font-size:1.3rem;font-weight:700;color:#f0f0f0;letter-spacing:1px;">EHC Swissair</div>
+  <div style="font-size:.85rem;color:#888;margin-top:-10px;">Statistik Saison 2026/27</div>
+  <div style="display:flex;gap:10px;margin-top:8px;" id="pinDots">
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #C8001E;background:transparent;" id="pd0"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #C8001E;background:transparent;" id="pd1"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #C8001E;background:transparent;" id="pd2"></div>
+    <div style="width:14px;height:14px;border-radius:50%;border:2px solid #C8001E;background:transparent;" id="pd3"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,minmax(64px,80px));gap:10px;padding-bottom:env(safe-area-inset-bottom,0px);">
+    <button onclick="pinKey('1')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">1</button>
+    <button onclick="pinKey('2')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">2</button>
+    <button onclick="pinKey('3')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">3</button>
+    <button onclick="pinKey('4')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">4</button>
+    <button onclick="pinKey('5')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">5</button>
+    <button onclick="pinKey('6')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">6</button>
+    <button onclick="pinKey('7')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">7</button>
+    <button onclick="pinKey('8')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">8</button>
+    <button onclick="pinKey('9')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">9</button>
+    <button onclick="pinClear()" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#888;font-size:.9rem;cursor:pointer;touch-action:manipulation;">⌫</button>
+    <button onclick="pinKey('0')" style="height:60px;width:100%;border-radius:10px;background:#1e1e1e;border:1px solid #3a1010;color:#f0f0f0;font-size:1.3rem;cursor:pointer;touch-action:manipulation;">0</button>
+    <div></div>
+  </div>
+  <div id="pinError" style="color:#C8001E;font-size:.85rem;height:20px;"></div>
+</div>
+
+<script>
+(function() {
+  const PIN = '1963';
+  let entered = '';
+  function pinKey(d) {
+    if (entered.length >= 4) return;
+    entered += d;
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('pd'+i).style.background = i < entered.length ? '#C8001E' : 'transparent';
+    }
+    if (entered.length === 4) {
+      setTimeout(() => {
+        if (entered === PIN) {
+          document.getElementById('pinOverlay').style.display = 'none';
+          sessionStorage.setItem('pin_ok', '1');
+        } else {
+          document.getElementById('pinError').textContent = 'Falscher Code. Bitte nochmals versuchen.';
+          entered = '';
+          for (let i = 0; i < 4; i++) document.getElementById('pd'+i).style.background = 'transparent';
+        }
+      }, 200);
+    }
+  }
+  function pinClear() {
+    entered = entered.slice(0, -1);
+    for (let i = 0; i < 4; i++) {
+      document.getElementById('pd'+i).style.background = i < entered.length ? '#C8001E' : 'transparent';
+    }
+    document.getElementById('pinError').textContent = '';
+  }
+  // Expose globally
+  window.pinKey = pinKey;
+  window.pinClear = pinClear;
+  // Skip PIN if already entered this session
+  if (sessionStorage.getItem('pin_ok') === '1') {
+    document.getElementById('pinOverlay').style.display = 'none';
+  }
+})();
+</script>
+
+<div id="bg-logo"></div>
+<div id="loadingOverlay"><div class="spin"></div><p>Verbinde mit Datenbank…</p></div>
+<div id="syncDot" style="display:none;"><span></span> Live-Sync aktiv</div>
+
+<header>
+  <div class="logo">ZEP</div>
+  <div>
+    <h1>EHC Swissair</h1>
+    <div class="sub">Statistik Saison 2026 / 27</div>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;">
+    <button class="btn btn-gold" onclick="openAddGame()">＋ Spiel eintragen</button>
+  </div>
+</header>
+
+<div class="summary" id="summaryStrip">
+  <div class="sum-item"><div class="sum-val" id="s-sp">0</div><div class="sum-lbl">Spiele</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-w">0</div><div class="sum-lbl">Siege</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-l">0</div><div class="sum-lbl">Niederlagen</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-d">0</div><div class="sum-lbl">Unentschieden</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-gf">0</div><div class="sum-lbl">Tore</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-ga">0</div><div class="sum-lbl">Gegentore</div></div>
+  <div class="sum-item"><div class="sum-val" id="s-pts">0</div><div class="sum-lbl">Punkte (Tabelle)</div></div>
+</div>
+
+<nav>
+  <button class="active" onclick="showTab('tab-stats',this)">📊 Spielerstatistik</button>
+  <button onclick="showTab('tab-games',this)">🏒 Spiele</button>
+  <button onclick="showTab('tab-scorer',this)">⭐ Scorer letztes Spiel</button>
+  <button onclick="showTab('tab-top',this)">🏆 Topscorer</button>
+  <button onclick="showTab('tab-team',this)">👥 Kader</button>
+  <button onclick="showTab('tab-liga',this)">🏅 Liga-Tabelle</button>
+</nav>
+
+<main>
+
+<!-- TAB: STATISTIK -->
+<div class="tab active" id="tab-stats">
+  <div class="sh">
+    <h2>Spielerstatistik Saison 2026/27</h2>
+    <div class="flex">
+      <select id="posFilter" onchange="renderStats()" style="width:auto;">
+        <option value="">Alle Positionen</option>
+        <option value="TH">Torhüter</option>
+        <option value="V">Verteidiger</option>
+        <option value="ST">Stürmer</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Skater table -->
+  <div id="skaterSection">
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;">Feldspieler</p>
+    <div class="tw" id="skaterTableWrap">
+      <table id="skaterTable">
+        <thead>
+          <tr>
+            <th onclick="sortTable('skater','pos')">Pos</th>
+            <th onclick="sortTable('skater','nr')" class="nr">Nr.</th>
+            <th onclick="sortTable('skater','name')">Name</th>
+            <th onclick="sortTable('skater','gp')" class="nr">SP</th>
+            <th onclick="sortTable('skater','g')" class="nr">T</th>
+            <th onclick="sortTable('skater','a')" class="nr">A</th>
+            <th onclick="sortTable('skater','pts')" class="nr s-desc">PTS</th>
+            <th onclick="sortTable('skater','ppg')" class="nr">Ø PTS</th>
+            <th onclick="sortTable('skater','pim')" class="nr">STM</th>
+          </tr>
+        </thead>
+        <tbody id="skaterBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- Goalie table -->
+  <div id="goalieSection">
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:8px;text-transform:uppercase;font-weight:700;letter-spacing:.5px;">Torhüter</p>
+    <div class="tw">
+      <table id="goalieTable">
+        <thead>
+          <tr>
+            <th>Pos</th>
+            <th onclick="sortTable('goalie','nr')" class="nr">Nr.</th>
+            <th onclick="sortTable('goalie','name')">Name</th>
+            <th onclick="sortTable('goalie','gp')" class="nr">SP</th>
+            <th onclick="sortTable('goalie','w')" class="nr">S</th>
+            <th onclick="sortTable('goalie','l')" class="nr">N</th>
+            <th onclick="sortTable('goalie','d')" class="nr">U</th>
+            <th onclick="sortTable('goalie','ga')" class="nr">GT</th>
+            <th onclick="sortTable('goalie','gaa')" class="nr">Ø GT</th>
+            <th onclick="sortTable('goalie','so')" class="nr">SO</th>
+            <th onclick="sortTable('goalie','pts')" class="nr s-desc">PTS</th>
+          </tr>
+        </thead>
+        <tbody id="goalieBody"></tbody>
+      </table>
+    </div>
+  </div>
+  <p class="note" style="margin-top:10px;">SP=Spiele · T=Tore · A=Assists · PTS=Punkte · Ø PTS=Schnitt · STM=Strafminuten · S=Siege · N=Niederlagen · U=Unentschieden · GT=Gegentore · SO=Shutouts</p>
+</div>
+
+<!-- TAB: SPIELE -->
+<div class="tab" id="tab-games">
+  <div class="sh">
+    <h2>Spielübersicht</h2>
+    <button class="btn btn-gold" onclick="openAddGame()">＋ Spiel eintragen</button>
+  </div>
+  <div class="games-layout">
+    <div id="gamesList"></div>
+    <div id="lastGameScorers"></div>
+  </div>
+</div>
+
+<!-- TAB: SCORER LETZTES SPIEL -->
+<div class="tab" id="tab-scorer">
+  <div id="lastGameScorersTab"></div>
+</div>
+
+<!-- TAB: TOPSCORER -->
+<div class="tab" id="tab-top">
+  <div class="sh"><h2>Topscorer</h2>
+    <select id="topCat" onchange="renderTop()" style="width:auto;">
+      <option value="pts">Punkte</option>
+      <option value="g">Tore</option>
+      <option value="a">Assists</option>
+      <option value="ppg">Ø Punkte/Spiel</option>
+    </select>
+  </div>
+  <div class="cc" style="height:260px;">
+    <canvas id="topChart"></canvas>
+  </div>
+  <div class="lb" id="topList"></div>
+</div>
+
+<!-- TAB: KADER -->
+<div class="tab" id="tab-team">
+  <div class="sh">
+    <h2>Kader verwalten</h2>
+    <button class="btn" onclick="openAddPlayer()">＋ Spieler hinzufügen</button>
+  </div>
+  <div class="pm-grid" id="rosterGrid"></div>
+</div>
+
+</main>
+
+<!-- TAB: LIGA-TABELLE -->
+<div class="tab" id="tab-liga">
+  <div class="liga-toolbar">
+    <h2>Liga-Tabelle ZEP</h2>
+    <span class="liga-badge">GRUPPE A</span>
+    <button class="btn btn-ghost btn-sm" onclick="refreshLiga()" id="ligaRefreshBtn">↻ Aktualisieren</button>
+    <a href="https://www.zep.ch/index.php?target=saison" target="_blank" class="btn btn-ghost btn-sm">🔗 zep.ch öffnen</a>
+  </div>
+
+  <!-- Cached / parsed table (primary) -->
+  <div id="ligaCachedWrap">
+    <div class="liga-cached" id="ligaCachedTable"></div>
+    <div class="liga-last-update" id="ligaLastUpdate"></div>
+  </div>
+
+  <!-- Fallback: iframe -->
+  <div id="ligaFrameWrap" class="liga-frame-wrap" style="display:none;">
+    <iframe
+      id="ligaIframe"
+      src="https://www.zep.ch/index.php?target=saison"
+      sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+      title="ZEP Rangliste Gruppe A"
+      onload="onIframeLoad()"
+      onerror="onIframeError()"
+    ></iframe>
+  </div>
+
+  <!-- Fallback: blocked -->
+  <div class="liga-fallback" id="ligaFallback">
+    <div class="ico">🔗</div>
+    <p>Die ZEP-Tabelle kann hier nicht eingebettet werden.<br>Klick unten, um sie direkt auf zep.ch zu öffnen.</p>
+    <a href="https://www.zep.ch/index.php?target=saison" target="_blank" class="btn btn-gold">Tabelle auf zep.ch öffnen</a>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SPIEL HINZUFÜGEN
+     ============================================================ -->
+<div class="overlay" id="gameModal">
+  <div class="modal">
+    <h2>🏒 Spiel eintragen</h2>
+    <div class="fr">
+      <div class="fg">
+        <label>Datum</label>
+        <input type="date" id="gDate">
+      </div>
+      <div class="fg">
+        <label>Heimteam</label>
+        <input type="text" id="gHome" value="EHC Swissair">
+      </div>
+      <div class="fg">
+        <label>Gastteam</label>
+        <input type="text" id="gAway" placeholder="Gegner">
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label>Tore Heimteam</label>
+        <input type="number" id="gGoalsH" min="0" value="" oninput="validateGameInputs()">
+      </div>
+      <div class="fg">
+        <label>Tore Gastteam</label>
+        <input type="number" id="gGoalsA" min="0" value="" oninput="validateGameInputs()">
+      </div>
+      <div class="fg">
+        <label>Bemerkung</label>
+        <input type="text" id="gNote" placeholder="z.B. Forfait, Overtime…">
+      </div>
+    </div>
+    <div id="gScoreInfo" class="warn" style="display:none;"></div>
+
+    <div class="divider"></div>
+
+    <div class="mtabs">
+      <button class="mtab active" onclick="switchModalTab('goalies',this)">Torhüter</button>
+      <button class="mtab" onclick="switchModalTab('skaters',this)">Feldspieler</button>
+    </div>
+
+    <!-- Goalie stats -->
+    <div id="modal-goalies">
+      <div class="pst">
+        <div class="psh psh-g">
+          <span></span><span>Nr.</span><span>Name</span>
+          <span class="tc">Gespielt</span><span class="tc">GT</span>
+          <span class="tc">T</span><span class="tc">A</span>
+          <!--<span class="tc">SO</span>-->
+        </div>
+        <div id="goalieInputs"></div>
+      </div>
+      <p class="note">GT = Gegentore (nur wenn dieser Torhüter im Tor stand)</p>
+    </div>
+
+    <!-- Skater stats -->
+    <div id="modal-skaters" style="display:none;">
+      <div class="pst">
+        <div class="psh">
+          <span></span><span>Nr.</span><span>Name</span>
+          <span class="tc">Gespielt</span><span class="tc">T</span>
+          <span class="tc">A</span><span class="tc">STM</span>
+        </div>
+        <div id="skaterInputs"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <div id="gameModalError" style="display:none;background:#2a0008;border:1px solid #C8001E;border-radius:8px;padding:12px 16px;margin-bottom:12px;font-size:.85rem;line-height:1.5;color:#ffb3be;"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeGameModal()">Abbrechen</button>
+      <button class="btn btn-gold" onclick="saveGame()">Spiel speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SPIELER HINZUFÜGEN
+     ============================================================ -->
+<div class="overlay" id="playerModal">
+  <div class="modal" style="max-width:400px;">
+    <h2>Spieler hinzufügen</h2>
+    <div class="fr" style="grid-template-columns:1fr 1fr;">
+      <div class="fg">
+        <label>Rückennummer</label>
+        <input type="number" id="pNr" min="1" max="99" placeholder="23">
+      </div>
+      <div class="fg">
+        <label>Position</label>
+        <select id="pPos">
+          <option value="TH">Torhüter</option>
+          <option value="V">Verteidiger</option>
+          <option value="ST" selected>Stürmer</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg" style="margin-bottom:16px;">
+      <label>Name</label>
+      <input type="text" id="pName" placeholder="Nachname Vorname">
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-ghost" onclick="closePlayerModal()">Abbrechen</button>
+      <button class="btn btn-gold" onclick="savePlayer()">Hinzufügen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SPIEL DETAIL
+     ============================================================ -->
+<div class="overlay" id="detailModal">
+  <div class="modal">
+    <h2 id="detailTitle">Spieldetails</h2>
+    <div class="detail-grid" id="detailCards"></div>
+    <div class="divider"></div>
+    <div class="tw">
+      <table>
+        <thead>
+          <tr>
+            <th>Nr.</th><th>Name</th><th class="tc">Pos</th>
+            <th class="nr">T</th><th class="nr">A</th><th class="nr">PTS</th><th class="nr">STM</th>
+          </tr>
+        </thead>
+        <tbody id="detailBody"></tbody>
+      </table>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-danger btn-sm" id="detailDeleteBtn">Spiel löschen</button>
+      <button class="btn btn-ghost" onclick="closeDetailModal()">Schließen</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     MODAL: SPIELER LÖSCHEN CONFIRM
+     ============================================================ -->
+<div class="overlay" id="deletePlayerModal">
+  <div class="modal" style="max-width:380px;">
+    <h2>Spieler entfernen</h2>
+    <p id="deletePlayerMsg" style="margin-bottom:20px;font-size:.9rem;color:var(--muted);"></p>
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-ghost" onclick="closeDeletePlayerModal()">Abbrechen</button>
+      <button class="btn btn-danger" id="confirmDeletePlayer">Entfernen</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================================================================
+// DATA
+// ================================================================
+
+const SEASON = '2026/27';
+const TEAM = 'EHC Swissair';
+
+const DEFAULT_PLAYERS = [
+  {id:1,pos:'TH',nr:96,name:'Rutzer Roger'},
+  {id:2,pos:'TH',nr:32,name:'Winkler Jan'},
+  {id:3,pos:'TH',nr:51,name:'Iten Oliver'},
+  {id:4,pos:'V',nr:91,name:'Hiltebrand Norik'},
+  {id:5,pos:'V',nr:93,name:'Jakob Jonas'},
+  {id:6,pos:'V',nr:37,name:'Liechti Claude'},
+  {id:7,pos:'V',nr:67,name:'Steiner Robin'},
+  {id:8,pos:'V',nr:23,name:'Wäger Claudio'},
+  {id:9,pos:'V',nr:14,name:'Hybler Zbynek'},
+  {id:10,pos:'V',nr:6,name:'Blasimann Christian'},
+  {id:11,pos:'V',nr:56,name:'Kägi Dominic'},
+  {id:12,pos:'V',nr:13,name:'Mundanjohl Patrick'},
+  {id:13,pos:'V',nr:97,name:'Künzler Marco'},
+  {id:14,pos:'V',nr:42,name:'Kuhn Lars'},
+  {id:15,pos:'ST',nr:85,name:'Schöb Thierry'},
+  {id:16,pos:'ST',nr:73,name:'Morell Andri'},
+  {id:17,pos:'ST',nr:82,name:'Emch Fabio'},
+  {id:18,pos:'ST',nr:47,name:'Widmer Robin'},
+  {id:19,pos:'ST',nr:81,name:'Flynn Brian'},
+  {id:20,pos:'ST',nr:94,name:'Mc Hale James'},
+  {id:21,pos:'ST',nr:49,name:'Le Calvez Jean Marc'},
+  {id:22,pos:'ST',nr:62,name:'Hanson Matthew'},
+  {id:24,pos:'ST',nr:78,name:'Schneider Max'},
+  {id:25,pos:'ST',nr:22,name:'Bieri Adrian'},
+  {id:26,pos:'ST',nr:0, name:'Erdelean Dennis'},
+  {id:27,pos:'ST',nr:0, name:'Denier Philippe'},
+  {id:28,pos:'ST',nr:0, name:'Papa Gianluca'},
+  {id:29,pos:'ST',nr:0, name:'Zwick Mark'},
+];
+
+// ================================================================
+// FIREBASE SETUP
+// ================================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyBRrKwDFsSORwDvqmPwkyDX5syhkea0cJo",
+  authDomain: "swissair-stats.firebaseapp.com",
+  projectId: "swissair-stats",
+  storageBucket: "swissair-stats.firebasestorage.app",
+  messagingSenderId: "501504569112",
+  appId: "1:501504569112:web:616802cfee184effc7b86d",
+  measurementId: "G-24EZBHNVRK"
+};
+firebase.initializeApp(firebaseConfig);
+const firestore = firebase.firestore();
+const dataRef = firestore.collection('ehc_swissair').doc('saison_2627');
+
+let db = defaultDb();
+let _modalOpen = false; // don't overwrite db while modal is open
+let _saving    = false; // don't overwrite db with our own echo snapshot
+
+function defaultDb() {
+  return { players: JSON.parse(JSON.stringify(DEFAULT_PLAYERS)), games: [], nextId: 100 };
+}
+
+function showToast(msg, isError) {
+  const t = document.createElement('div');
+  t.style.cssText = `
+    position:fixed;bottom:calc(50px + env(safe-area-inset-bottom,0px));left:50%;
+    transform:translateX(-50%);
+    background:${isError ? '#4a1515' : '#0f2a1a'};
+    color:${isError ? '#fca5a5' : '#86efac'};
+    border:1px solid ${isError ? '#7f1d1d' : '#166534'};
+    padding:10px 18px;border-radius:9px;font-size:.82rem;font-weight:600;
+    z-index:99998;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);
+  `;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), isError ? 5000 : 2500);
+}
+
+function save() {
+  _saving = true;
+  dataRef.set(JSON.parse(JSON.stringify(db)))
+    .then(() => {
+      _saving = false;
+    })
+    .catch(e => {
+      _saving = false;
+      console.error('Firebase save error:', e);
+      showToast('⚠️ Speichern fehlgeschlagen – prüfe die Firebase-Regeln.', true);
+    });
+}
+
+// Sicheres Speichern: aktuellen Stand aus der Datenbank holen, Änderung darauf anwenden, zurückschreiben
+function mutate(fn, after) {
+  _saving = true;
+  return firestore.runTransaction(async tx => {
+    const snap = await tx.get(dataRef);
+    const remote = snap.exists ? snap.data() : defaultDb();
+    if (!remote.games) remote.games = [];
+    if (!remote.players) remote.players = [];
+    if (!remote.nextId) remote.nextId = 100;
+    fn(remote);
+    tx.set(dataRef, JSON.parse(JSON.stringify(remote)));
+    return remote;
+  }).then(remote => {
+    _saving = false;
+    db = remote;
+    renderAll();
+    if (after) after();
+  }).catch(e => {
+    _saving = false;
+    console.error('Firebase save error:', e);
+    showToast('⚠️ Speichern fehlgeschlagen – bitte Seite neu laden und nochmals versuchen.', true);
+  });
+}
+
+// Zusätzlicher Code zum Eintragen/Bearbeiten/Löschen von Spielen
+const EDIT_PIN = '9196';
+function requireEditPin() {
+  if (sessionStorage.getItem('edit_ok') === '1') return true;
+  const c = prompt('Code zum Eintragen von Spielen:');
+  if (c === null) return false;
+  if (c.trim() === EDIT_PIN) { sessionStorage.setItem('edit_ok', '1'); return true; }
+  alert('Falscher Code.');
+  return false;
+}
+
+function migrateDb() {
+  let changed = false;
+  if (!db.removedPlayers) db.removedPlayers = [];
+  for (const dp of DEFAULT_PLAYERS) {
+    if (db.removedPlayers.includes(dp.name.toLowerCase())) continue; // bewusst gelöscht
+    const exists = db.players.find(p => p.name.toLowerCase() === dp.name.toLowerCase());
+    if (!exists) { db.players.push({...dp, id: db.nextId++}); changed = true; }
+  }
+  const hanson = db.players.find(p => p.name.toLowerCase().includes('hanson'));
+  if (hanson && hanson.nr === 90) { hanson.nr = 62; changed = true; }
+  const before = db.players.length;
+  db.players = db.players.filter(p => !p.name.toLowerCase().includes('tschanz'));
+  if (db.players.length !== before) changed = true;
+  if (changed) save();
+}
+
+// Real-time listener
+dataRef.onSnapshot(snapshot => {
+  document.getElementById('loadingOverlay').style.display = 'none';
+  document.getElementById('syncDot').style.display = 'flex';
+
+  if (snapshot.exists) {
+    // Skip if we triggered this snapshot ourselves, or modal is open
+    if (!_saving && !_modalOpen) {
+      db = snapshot.data();
+      migrateDb();
+      renderAll();
+    }
+  } else {
+    db = defaultDb();
+    migrateDb();
+    save();
+    renderAll();
+  }
+}, err => {
+  console.error('Firestore error:', err);
+  document.getElementById('loadingOverlay').innerHTML =
+    '<div style="color:#ff4466;font-size:.9rem;text-align:center;padding:24px;">⚠️ Verbindung zur Datenbank fehlgeschlagen.<br>Bitte Seite neu laden.</div>';
+});
+
+// ================================================================
+// COMPUTED STATS
+// ================================================================
+
+function getPlayerStats(pid) {
+  const p = db.players.find(x => x.id === pid);
+  if (!p) return null;
+  let gp=0,g=0,a=0,pim=0,w=0,l=0,d=0,ga=0,so=0;
+  for (const game of db.games) {
+    const ps = game.playerStats && game.playerStats[pid];
+    if (!ps || !ps.played) continue;
+    gp++;
+    g   += ps.g   || 0;
+    a   += ps.a   || 0;
+    pim += ps.pim || 0;
+    if (p.pos === 'TH') {
+      ga += ps.ga || 0;
+      if (ps.so) so++;
+      // result from game perspective
+      const ourGoals = ourScore(game);
+      const theirGoals = theirScore(game);
+      if (ourGoals > theirGoals) w++;
+      else if (ourGoals < theirGoals) l++;
+      else d++;
+    }
+  }
+  const pts = g + a;
+  const ppg = gp > 0 ? pts / gp : 0;
+  const gaa = gp > 0 ? ga / gp : 0;
+  return {gp,g,a,pts,ppg,pim,w,l,d,ga,gaa,so};
+}
+
+function ourScore(game) {
+  const home = game.home.toLowerCase().includes('swissair');
+  return home ? game.goalsH : game.goalsA;
+}
+
+function theirScore(game) {
+  const home = game.home.toLowerCase().includes('swissair');
+  return home ? game.goalsA : game.goalsH;
+}
+
+function gameResult(game) {
+  const ours = ourScore(game);
+  const theirs = theirScore(game);
+  if (game.note && game.note.toLowerCase().includes('forfait')) return 'F';
+  if (ours > theirs) return 'W';
+  if (ours < theirs) return 'L';
+  return 'D';
+}
+
+function teamSummary() {
+  let sp=0,w=0,l=0,d=0,gf=0,ga=0;
+  for (const game of db.games) {
+    sp++;
+    const r = gameResult(game);
+    if (r==='W'||r==='F') w++;
+    else if (r==='L') l++;
+    else if (r==='D') d++;
+    gf += ourScore(game);
+    ga += theirScore(game);
+  }
+  const pts = w*2 + d;
+  return {sp,w,l,d,gf,ga,pts};
+}
+
+// ================================================================
+// TABS
+// ================================================================
+
+// ================================================================
+// SORT STATE
+// ================================================================
+
+const sortState = {
+  skater: {col:'pts', dir:'desc'},
+  goalie: {col:'gp', dir:'desc'}
+};
+
+function sortTable(type, col) {
+  const s = sortState[type];
+  if (s.col === col) s.dir = s.dir==='asc' ? 'desc' : 'asc';
+  else { s.col = col; s.dir = 'desc'; }
+  renderStats();
+  // update header classes
+  const tbl = document.getElementById(type==='skater' ? 'skaterTable' : 'goalieTable');
+  tbl.querySelectorAll('thead th').forEach(th => {
+    th.classList.remove('s-asc','s-desc');
+    const fn = th.getAttribute('onclick')||'';
+    if (fn.includes(`'${col}'`)) th.classList.add(s.dir==='asc'?'s-asc':'s-desc');
+  });
+}
+
+// ================================================================
+// RENDER: STATS TABLE
+// ================================================================
+
+function renderStats() {
+  const posFilter = document.getElementById('posFilter').value;
+
+  // Skaters
+  const skaters = db.players.filter(p => p.pos !== 'TH' && (!posFilter || p.pos === posFilter));
+  const skaterData = skaters.map(p => ({...p, ...getPlayerStats(p.id)}));
+  const s = sortState.skater;
+  skaterData.sort((a,b) => {
+    // Players with games always before those with 0 games
+    if ((a.gp > 0) !== (b.gp > 0)) return a.gp > 0 ? -1 : 1;
+    // Then by selected column
+    let av = a[s.col] ?? 0, bv = b[s.col] ?? 0;
+    if (typeof av === 'string') av = av.toLowerCase();
+    if (typeof bv === 'string') bv = bv.toLowerCase();
+    if (av < bv) return s.dir==='asc' ? -1 : 1;
+    if (av > bv) return s.dir==='asc' ? 1 : -1;
+    // Tiebreak: more goals first
+    return (b.g||0) - (a.g||0);
+  });
+
+  const skaterBody = document.getElementById('skaterBody');
+  skaterBody.innerHTML = '';
+  if (skaterData.length === 0) {
+    skaterBody.innerHTML = '<tr><td colspan="9" class="empty" style="padding:24px;">Keine Spieler</td></tr>';
+  } else {
+    // Group by position
+    const groups = { V: 'Verteidiger', ST: 'Stürmer' };
+    let lastPos = null;
+    for (const p of skaterData) {
+      if (!posFilter && p.pos !== lastPos) {
+        lastPos = p.pos;
+        const gr = document.createElement('tr');
+        gr.className = 'grp';
+        gr.innerHTML = `<td colspan="9">${groups[p.pos] || p.pos}</td>`;
+        skaterBody.appendChild(gr);
+      }
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><span class="pb pb-${p.pos}">${p.pos==='V'?'VER':'STÜ'}</span></td>
+        <td class="nr">${p.nr}</td>
+        <td><b>${p.name}</b></td>
+        <td class="nr">${p.gp}</td>
+        <td class="nr">${p.g}</td>
+        <td class="nr">${p.a}</td>
+        <td class="nr pts">${p.pts}</td>
+        <td class="nr">${p.gp>0 ? p.ppg.toFixed(2) : '—'}</td>
+        <td class="nr">${p.pim}</td>
+      `;
+      skaterBody.appendChild(tr);
+    }
+  }
+
+  // Show/hide sections
+  document.getElementById('skaterSection').style.display =
+    (!posFilter || posFilter!=='TH') ? '' : 'none';
+  document.getElementById('goalieSection').style.display =
+    (!posFilter || posFilter==='TH') ? '' : 'none';
+
+  // Goalies
+  const goalies = db.players.filter(p => p.pos === 'TH');
+  const goalieData = goalies.map(p => ({...p, ...getPlayerStats(p.id)}));
+  const gs = sortState.goalie;
+  goalieData.sort((a,b) => {
+    if ((a.gp > 0) !== (b.gp > 0)) return a.gp > 0 ? -1 : 1;
+    let av = a[gs.col] ?? 0, bv = b[gs.col] ?? 0;
+    if (av < bv) return gs.dir==='asc' ? -1 : 1;
+    if (av > bv) return gs.dir==='asc' ? 1 : -1;
+    return 0;
+  });
+
+  const goalieBody = document.getElementById('goalieBody');
+  goalieBody.innerHTML = '';
+  for (const p of goalieData) {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><span class="pb pb-TH">TH</span></td>
+      <td class="nr">${p.nr}</td>
+      <td><b>${p.name}</b></td>
+      <td class="nr">${p.gp}</td>
+      <td class="nr" style="color:var(--green)">${p.w}</td>
+      <td class="nr" style="color:var(--red)">${p.l}</td>
+      <td class="nr">${p.d}</td>
+      <td class="nr">${p.ga}</td>
+      <td class="nr">${p.gp>0 ? p.gaa.toFixed(2) : '—'}</td>
+      <td class="nr">${p.so}</td>
+      <td class="nr pts">${p.pts}</td>
+    `;
+    goalieBody.appendChild(tr);
+  }
+}
+
+// ================================================================
+// RENDER: SUMMARY STRIP
+// ================================================================
+
+function renderSummary() {
+  const s = teamSummary();
+  document.getElementById('s-sp').textContent = s.sp;
+  document.getElementById('s-w').textContent  = s.w;
+  document.getElementById('s-l').textContent  = s.l;
+  document.getElementById('s-d').textContent  = s.d;
+  document.getElementById('s-gf').textContent = s.gf;
+  document.getElementById('s-ga').textContent = s.ga;
+  document.getElementById('s-pts').textContent= s.pts;
+}
+
+// ================================================================
+// RENDER: GAMES
+// ================================================================
+
+function renderGames() {
+  const container = document.getElementById('gamesList');
+  if (db.games.length === 0) {
+    container.innerHTML = `<div class="empty"><div class="ico">🏒</div><p>Noch keine Spiele eingetragen.</p></div>`;
+    return;
+  }
+  const sorted = [...db.games].sort((a,b) => b.date.localeCompare(a.date));
+  container.innerHTML = '';
+  for (const game of sorted) {
+    const r = gameResult(game);
+    const badges = {W:'rb-W',L:'rb-L',D:'rb-D',F:'rb-F'};
+    const labels = {W:'SIEG',L:'NIEDERLAGE',D:'UNENTSCHIEDEN',F:'FORFAIT'};
+    const scoreStyle = r==='W'||r==='F' ? 'color:var(--green)' : r==='L' ? 'color:var(--red)' : '';
+    const d = document.createElement('div');
+    d.className='gc';
+    d.onclick = () => openDetailModal(game.id);
+    d.innerHTML = `
+      <div class="gc-date">${formatDate(game.date)}</div>
+      <div class="gc-teams">
+        <div class="gc-home">${game.home}</div>
+        <div class="gc-away">vs. ${game.away}</div>
+      </div>
+      <div class="gc-score" style="${scoreStyle}">${game.goalsH} : ${game.goalsA}</div>
+      <div><span class="rb ${badges[r]}">${labels[r]}</span></div>
+      ${game.note ? `<div style="font-size:.75rem;color:var(--muted);">${game.note}</div>` : ''}
+      <button class="btn btn-ghost btn-sm gc-edit" onclick="event.stopPropagation();openEditGame(${game.id})" title="Bearbeiten">✏️</button>
+    `;
+    container.appendChild(d);
+  }
+}
+
+function formatDate(s) {
+  if (!s) return '—';
+  const [y,m,d] = s.split('-');
+  return `${d}.${m}.${y}`;
+}
+
+// ================================================================
+// RENDER: TOPSCORER
+// ================================================================
+
+let topChart = null;
+
+function renderTop() {
+  const cat = document.getElementById('topCat').value;
+  const catLabels = {pts:'Punkte',g:'Tore',a:'Assists',ppg:'Ø PTS/Spiel'};
+
+  // All skaters with >= 1 game
+  const data = db.players
+    .filter(p => p.pos !== 'TH')
+    .map(p => ({...p, ...getPlayerStats(p.id)}))
+    .filter(p => p.gp > 0)
+    .sort((a,b) => (b[cat]||0) - (a[cat]||0))
+    .slice(0, 15);
+
+  // Also add goalies if pts
+  const goalies = db.players
+    .filter(p => p.pos === 'TH')
+    .map(p => ({...p, ...getPlayerStats(p.id)}))
+    .filter(p => p.gp > 0 && (p[cat]||0) > 0);
+
+  const all = [...data, ...goalies].sort((a,b)=>(b[cat]||0)-(a[cat]||0)).slice(0,15);
+
+  const labels = all.map(p => `#${p.nr} ${p.name.split(' ')[0]}`);
+  const vals   = all.map(p => +(p[cat]||0).toFixed(2));
+  const colors = all.map(p =>
+    p.pos==='TH' ? '#fbbf24' : p.pos==='V' ? '#4ade80' : '#ff4466'
+  );
+
+  const ctx = document.getElementById('topChart').getContext('2d');
+  if (topChart) topChart.destroy();
+  topChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: catLabels[cat],
+        data: vals,
+        backgroundColor: colors,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#5a7a9c',font:{size:11}},grid:{color:'#1d3a5c'}},
+        y:{ticks:{color:'#5a7a9c'},grid:{color:'#1d3a5c'},beginAtZero:true}
+      }
+    }
+  });
+
+  // Leaderboard list
+  const list = document.getElementById('topList');
+  list.innerHTML = '';
+  const max = vals[0] || 1;
+  const medals = ['🥇','🥈','🥉'];
+  all.forEach((p,i) => {
+    const v = +(p[cat]||0);
+    const div = document.createElement('div');
+    div.className = 'lbi';
+    div.innerHTML = `
+      <div class="lbi-rank">${medals[i] || `<span style="font-size:.9rem;color:var(--muted)">${i+1}</span>`}</div>
+      <div class="lbi-info">
+        <div class="lbi-name">#${p.nr} ${p.name}</div>
+        <div class="lbi-sub">${p.gp} Spiele · <span class="pb pb-${p.pos}">${p.pos}</span></div>
+        <div class="lbi-bar"><div class="lbi-fill" style="width:${(v/max*100).toFixed(1)}%"></div></div>
+      </div>
+      <div>
+        <div class="lbi-val">${cat==='ppg' ? v.toFixed(2) : v}</div>
+        <div class="lbi-sub" style="text-align:right">${catLabels[cat]}</div>
+      </div>
+    `;
+    list.appendChild(div);
+  });
+
+  if (all.length === 0) {
+    list.innerHTML = `<div class="empty"><div class="ico">🏆</div><p>Noch keine Statistiken vorhanden.</p></div>`;
+  }
+}
+
+// ================================================================
+// RENDER: ROSTER
+// ================================================================
+
+function renderRoster() {
+  const grid = document.getElementById('rosterGrid');
+  grid.innerHTML = '';
+  const posOrder = {TH:0,V:1,ST:2};
+  const sorted = [...db.players].sort((a,b) => {
+    if (posOrder[a.pos] !== posOrder[b.pos]) return posOrder[a.pos] - posOrder[b.pos];
+    return a.nr - b.nr;
+  });
+  const posNames = {TH:'Torhüter',V:'Verteidiger',ST:'Stürmer'};
+  for (const p of sorted) {
+    const div = document.createElement('div');
+    div.className = 'pm-card';
+    div.innerHTML = `
+      <div class="pm-nr" id="pm-nr-${p.id}">${p.nr||'—'}</div>
+      <div class="pm-info">
+        <div class="pm-name">${p.name}</div>
+        <div class="pm-pos"><span class="pb pb-${p.pos}">${posNames[p.pos]}</span></div>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="editPlayer(${p.id})" title="Bearbeiten">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="promptDeletePlayer(${p.id},'${p.name.replace(/'/g,"\\'")}')">×</button>
+    `;
+    grid.appendChild(div);
+  }
+}
+
+function editPlayer(id) {
+  const p = db.players.find(x => x.id === id);
+  if (!p) return;
+  const posNames = {TH:'Torhüter',V:'Verteidiger',ST:'Stürmer'};
+
+  const newNr = prompt(`Neue Nummer für ${p.name} (aktuell: ${p.nr||'—'}):`, p.nr||'');
+  if (newNr === null) return; // cancelled
+  const nr = parseInt(newNr);
+  if (isNaN(nr) || nr < 0 || nr > 99) {
+    alert('Ungültige Nummer (0–99).');
+    return;
+  }
+  const conflict = db.players.find(x => x.id !== id && x.nr === nr);
+  if (conflict) {
+    alert(`Nummer ${nr} ist bereits vergeben (${conflict.name}).`);
+    return;
+  }
+
+  const posOptions = 'TH = Torhüter\nV = Verteidiger\nST = Stürmer';
+  const newPos = prompt(`Position für ${p.name} (aktuell: ${posNames[p.pos]})\n${posOptions}:`, p.pos);
+  if (newPos === null) return;
+  const pos = newPos.trim().toUpperCase();
+  if (!['TH','V','ST'].includes(pos)) {
+    alert('Ungültige Position. Bitte TH, V oder ST eingeben.');
+    return;
+  }
+
+  p.nr  = nr;
+  p.pos = pos;
+  save();
+  renderRoster();
+  renderStats();
+}
+
+// ================================================================
+// MODAL: ADD GAME
+// ================================================================
+
+let currentEditGameId = null;
+
+function openAddGame() {
+  if (!requireEditPin()) return;
+  currentEditGameId = null;
+  _modalOpen = true;
+  document.querySelector('#gameModal h2').textContent = '🏒 Spiel eintragen';
+  document.querySelector('#gameModal .btn-gold').textContent = 'Spiel speichern';
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('gDate').value = today;
+  document.getElementById('gHome').value = TEAM;
+  document.getElementById('gAway').value = '';
+  document.getElementById('gGoalsH').value = '0';
+  document.getElementById('gGoalsA').value = '0';
+  document.getElementById('gNote').value = '';
+  document.getElementById('gScoreInfo').style.display = 'none';
+  buildPlayerInputs();
+  switchModalTab('goalies', document.querySelector('.mtab'));
+  document.getElementById('gameModal').classList.add('open');
+}
+
+function openEditGame(gameId) {
+  if (!requireEditPin()) return;
+  const game = db.games.find(g => g.id === gameId);
+  if (!game) return;
+  currentEditGameId = gameId;
+  document.querySelector('#gameModal h2').textContent = '✏️ Spiel bearbeiten';
+  document.querySelector('#gameModal .btn-gold').textContent = 'Änderungen speichern';
+  document.getElementById('gDate').value = game.date;
+  document.getElementById('gHome').value = game.home;
+  document.getElementById('gAway').value = game.away;
+  document.getElementById('gGoalsH').value = game.goalsH;
+  document.getElementById('gGoalsA').value = game.goalsA;
+  document.getElementById('gNote').value = game.note || '';
+  document.getElementById('gScoreInfo').style.display = 'none';
+  buildPlayerInputs();
+  // Pre-fill player stats
+  if (game.playerStats) {
+    for (const [pid, ps] of Object.entries(game.playerStats)) {
+      const playedEl = document.getElementById(`gp_played_${pid}`);
+      if (playedEl) playedEl.checked = !!ps.played;
+      const gEl = document.getElementById(`gp_g_${pid}`);
+      if (gEl) gEl.value = ps.g || '';
+      const aEl = document.getElementById(`gp_a_${pid}`);
+      if (aEl) aEl.value = ps.a || '';
+      const pimEl = document.getElementById(`gp_pim_${pid}`);
+      if (pimEl) pimEl.value = ps.pim || '';
+      const gaEl = document.getElementById(`gp_ga_${pid}`);
+      if (gaEl) gaEl.value = ps.ga || '';
+    }
+  }
+  switchModalTab('goalies', document.querySelector('.mtab'));
+  _modalOpen = true;
+  document.getElementById('gameModal').classList.add('open');
+}
+
+function closeGameModal() {
+  _modalOpen = false;
+  document.getElementById('gameModal').classList.remove('open');
+  const errEl = document.getElementById('gameModalError');
+  if (errEl) { errEl.style.display = 'none'; errEl.innerHTML = ''; }
+}
+
+function buildPlayerInputs() {
+  // Goalies
+  const gi = document.getElementById('goalieInputs');
+  gi.innerHTML = '';
+  db.players.filter(p=>p.pos==='TH').sort((a,b)=>a.nr-b.nr).forEach(p => {
+    const row = document.createElement('div');
+    row.className = 'psr psr-g';
+    row.innerHTML = `
+      <span></span>
+      <span style="color:var(--gold);font-weight:700;">${p.nr}</span>
+      <span style="font-size:.83rem;">${p.name}</span>
+      <input type="checkbox" id="gp_played_${p.id}" style="margin:auto;">
+      <input type="number" id="gp_ga_${p.id}" value="" min="0" max="99" style="width:100%;" oninput="validateGameInputs()" placeholder="GT">
+      <input type="number" id="gp_g_${p.id}" value="" min="0" max="99" style="width:100%;" oninput="validateGameInputs()" placeholder="T">
+      <input type="number" id="gp_a_${p.id}" value="" min="0" max="99" style="width:100%;" oninput="validateGameInputs()" placeholder="A">
+    `;
+    gi.appendChild(row);
+  });
+
+  // Skaters
+  const si = document.getElementById('skaterInputs');
+  si.innerHTML = '';
+  const posOrder = {V:0,ST:1};
+  db.players
+    .filter(p=>p.pos!=='TH')
+    .sort((a,b)=> posOrder[a.pos]-posOrder[b.pos] || a.nr-b.nr)
+    .forEach(p => {
+      const row = document.createElement('div');
+      row.className = 'psr';
+      row.innerHTML = `
+        <span></span>
+        <span style="color:var(--gold);font-weight:700;">${p.nr}</span>
+        <span style="font-size:.83rem;">${p.name}</span>
+        <input type="checkbox" id="gp_played_${p.id}" style="margin:auto;" title="Gespielt (max. 1)">
+        <input type="number" id="gp_g_${p.id}" value="" min="0" max="99" style="width:100%;" oninput="validateGameInputs()" placeholder="T">
+        <input type="number" id="gp_a_${p.id}" value="" min="0" max="99" style="width:100%;" oninput="validateGameInputs()" placeholder="A">
+        <input type="number" id="gp_pim_${p.id}" value="" min="0" style="width:100%;" placeholder="STM">
+      `;
+      si.appendChild(row);
+    });
+}
+
+function validateGameInputs() {
+  const errEl = document.getElementById('gameModalError');
+  if (!errEl) return;
+
+  const home      = document.getElementById('gHome').value.trim();
+  const goalsH    = parseInt(document.getElementById('gGoalsH').value) || 0;
+  const goalsA    = parseInt(document.getElementById('gGoalsA').value) || 0;
+  const isHome    = home.toLowerCase().includes('swissair');
+  const ourGoals  = isHome ? goalsH : goalsA;
+  const theirGoals= isHome ? goalsA : goalsH;
+
+  let totalG = 0, totalA = 0, totalGT = 0;
+  db.players.forEach(p => {
+    totalG  += parseInt(document.getElementById(`gp_g_${p.id}`)?.value)  || 0;
+    totalA  += parseInt(document.getElementById(`gp_a_${p.id}`)?.value)  || 0;
+    if (p.pos === 'TH')
+      totalGT += parseInt(document.getElementById(`gp_ga_${p.id}`)?.value) || 0;
+  });
+
+  const maxA = ourGoals * 2;
+  const errors = [];
+  if (totalG > ourGoals)
+    errors.push(`🚫 Tore (T): ${totalG} eingetragen — Maximum ${ourGoals} (Spielresultat).`);
+  if (totalA > maxA)
+    errors.push(`🚫 Assists (A): ${totalA} eingetragen — Maximum ${maxA} (${ourGoals} Tor${ourGoals !== 1 ? 'e' : ''} × 2).`);
+  if (totalGT > theirGoals)
+    errors.push(`🚫 Gegentore (GT): ${totalGT} eingetragen — Maximum ${theirGoals} (Gegentore im Spiel).`);
+
+  if (errors.length > 0) {
+    errEl.innerHTML = errors.join('<br>');
+    errEl.style.display = '';
+  } else {
+    errEl.style.display = 'none';
+    errEl.innerHTML = '';
+  }
+
+  // Highlight over-limit fields
+  db.players.forEach(p => {
+    const gEl  = document.getElementById(`gp_g_${p.id}`);
+    const aEl  = document.getElementById(`gp_a_${p.id}`);
+    const gaEl = document.getElementById(`gp_ga_${p.id}`);
+    if (gEl)  gEl.style.borderColor  = totalG  > ourGoals   ? '#C8001E' : '';
+    if (aEl)  aEl.style.borderColor  = totalA  > maxA       ? '#C8001E' : '';
+    if (gaEl) gaEl.style.borderColor = totalGT > theirGoals ? '#C8001E' : '';
+  });
+}
+
+function switchModalTab(tab, btn) {
+  document.getElementById('modal-goalies').style.display = tab==='goalies' ? '' : 'none';
+  document.getElementById('modal-skaters').style.display = tab==='skaters' ? '' : 'none';
+  document.querySelectorAll('.mtab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function saveGame() {
+  const date  = document.getElementById('gDate').value;
+  const home  = document.getElementById('gHome').value.trim();
+  const away  = document.getElementById('gAway').value.trim();
+  const goalsH= parseInt(document.getElementById('gGoalsH').value)||0;
+  const goalsA= parseInt(document.getElementById('gGoalsA').value)||0;
+  const note  = document.getElementById('gNote').value.trim();
+
+  const errEl = document.getElementById('gameModalError');
+  errEl.style.display = 'none';
+
+  if (!date || !home || !away) {
+    errEl.textContent = '⚠️ Bitte Datum, Heimteam und Gastteam ausfüllen.';
+    errEl.style.display = '';
+    return;
+  }
+
+  // Collect player stats
+  const playerStats = {};
+  for (const p of db.players) {
+    const playedEl = document.getElementById(`gp_played_${p.id}`);
+    if (!playedEl) continue;
+    const played = playedEl.checked;
+    const g   = parseInt(document.getElementById(`gp_g_${p.id}`)?.value)||0;
+    const a   = parseInt(document.getElementById(`gp_a_${p.id}`)?.value)||0;
+    const pim = parseInt(document.getElementById(`gp_pim_${p.id}`)?.value)||0;
+    const ga  = parseInt(document.getElementById(`gp_ga_${p.id}`)?.value)||0;
+    playerStats[p.id] = {played, g, a, pim, ga};
+  }
+
+  // Validate goals & assists vs. team score
+  const ourGoals = home.toLowerCase().includes('swissair') ? goalsH : goalsA;
+  const totalG = Object.values(playerStats).reduce((s, ps) => s + (ps.g || 0), 0);
+  const totalA = Object.values(playerStats).reduce((s, ps) => s + (ps.a || 0), 0);
+  const maxA   = ourGoals * 2;
+  const errors = [];
+  if (totalG > ourGoals)
+    errors.push(`🚫 Tore: ${totalG} eingetragen, aber das Spiel zeigt nur ${ourGoals} Tor${ourGoals !== 1 ? 'e' : ''} für unser Team.`);
+  if (totalA > maxA)
+    errors.push(`🚫 Assists: ${totalA} eingetragen, maximal erlaubt sind ${maxA} (= ${ourGoals} Tor${ourGoals !== 1 ? 'e' : ''} × 2).`);
+  if (errors.length > 0) {
+    errEl.innerHTML = errors.join('<br>');
+    errEl.style.display = '';
+    return;
+  }
+
+  if (!requireEditPin()) return;
+  const editId = currentEditGameId;
+  currentEditGameId = null;
+  closeGameModal();
+  mutate(r => {
+    if (editId !== null) {
+      const idx = r.games.findIndex(g => g.id === editId);
+      if (idx >= 0) r.games[idx] = {...r.games[idx], date, home, away, goalsH, goalsA, note, playerStats};
+    } else {
+      r.games.push({id: r.nextId++, date, home, away, goalsH, goalsA, note, playerStats});
+    }
+  }, () => showToast('✅ Spiel gespeichert'));
+}
+
+// ================================================================
+// MODAL: GAME DETAIL
+// ================================================================
+
+function openDetailModal(gameId) {
+  const game = db.games.find(g => g.id === gameId);
+  if (!game) return;
+  const r = gameResult(game);
+  const rLbl = {W:'SIEG 🎉',L:'NIEDERLAGE',D:'UNENTSCHIEDEN',F:'FORFAIT 🏆'};
+  const rColor = {W:'var(--green)',L:'var(--red)',D:'var(--text)',F:'var(--gold)'};
+
+  document.getElementById('detailTitle').textContent =
+    `${game.home} ${game.goalsH} : ${game.goalsA} ${game.away}`;
+
+  document.getElementById('detailCards').innerHTML = `
+    <div class="dg-card">
+      <div class="dg-val" style="color:${rColor[r]}">${rLbl[r]}</div>
+      <div class="dg-lbl">Ergebnis</div>
+    </div>
+    <div class="dg-card">
+      <div class="dg-val">${formatDate(game.date)}</div>
+      <div class="dg-lbl">Datum</div>
+    </div>
+    <div class="dg-card">
+      <div class="dg-val">${game.goalsH}</div>
+      <div class="dg-lbl">${game.home.substring(0,12)}</div>
+    </div>
+    <div class="dg-card">
+      <div class="dg-val">${game.goalsA}</div>
+      <div class="dg-lbl">${game.away.substring(0,12)}</div>
+    </div>
+    ${game.note ? `<div class="dg-card"><div class="dg-val" style="font-size:1rem;">${game.note}</div><div class="dg-lbl">Bemerkung</div></div>` : ''}
+  `;
+
+  // Player list
+  const tbody = document.getElementById('detailBody');
+  tbody.innerHTML = '';
+  const posOrder = {TH:0,V:1,ST:2};
+  const participated = db.players
+    .filter(p => game.playerStats?.[p.id]?.played)
+    .sort((a,b) => posOrder[a.pos]-posOrder[b.pos] || a.nr-b.nr);
+
+  if (participated.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:16px;">Keine Spielerstatistiken</td></tr>';
+  } else {
+    for (const p of participated) {
+      const ps = game.playerStats[p.id];
+      const pts = (ps.g||0) + (ps.a||0);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><b>${p.nr}</b></td>
+        <td>${p.name}${p.pos==='TH' ? ` <small style="color:var(--muted)">(GT: ${ps.ga||0})</small>` : ''}</td>
+        <td class="tc"><span class="pb pb-${p.pos}">${p.pos}</span></td>
+        <td class="nr">${ps.g||0}</td>
+        <td class="nr">${ps.a||0}</td>
+        <td class="nr pts">${pts}</td>
+        <td class="nr">${ps.pim||0}'</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  document.getElementById('detailDeleteBtn').onclick = () => confirmDeleteGame(game.id);
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeDetailModal() {
+  document.getElementById('detailModal').classList.remove('open');
+}
+
+function confirmDeleteGame(gameId) {
+  if (!requireEditPin()) return;
+  if (!confirm('Dieses Spiel wirklich löschen?')) return;
+  closeDetailModal();
+  mutate(r => { r.games = r.games.filter(g => g.id !== gameId); });
+}
+
+// ================================================================
+// MODAL: ADD PLAYER
+// ================================================================
+
+function openAddPlayer() {
+  document.getElementById('pNr').value = '';
+  document.getElementById('pName').value = '';
+  document.getElementById('pPos').value = 'ST';
+  document.getElementById('playerModal').classList.add('open');
+}
+
+function closePlayerModal() {
+  document.getElementById('playerModal').classList.remove('open');
+}
+
+function savePlayer() {
+  const nr   = parseInt(document.getElementById('pNr').value);
+  const name = document.getElementById('pName').value.trim();
+  const pos  = document.getElementById('pPos').value;
+  if (!nr || !name) { alert('Bitte Nummer und Name eingeben.'); return; }
+  if (db.players.find(p => p.nr === nr)) { alert(`Nummer #${nr} ist bereits vergeben.`); return; }
+  db.players.push({id: db.nextId++, pos, nr, name});
+  save();
+  closePlayerModal();
+  renderAll();
+}
+
+// ================================================================
+// MODAL: DELETE PLAYER
+// ================================================================
+
+let pendingDeleteId = null;
+
+function promptDeletePlayer(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('deletePlayerMsg').textContent =
+    `${name} aus dem Kader entfernen? Alle eingetragenen Statistiken bleiben erhalten.`;
+  document.getElementById('confirmDeletePlayer').onclick = executeDeletePlayer;
+  document.getElementById('deletePlayerModal').classList.add('open');
+}
+
+function executeDeletePlayer() {
+  if (!pendingDeleteId) return;
+  const delId = pendingDeleteId;
+  pendingDeleteId = null;
+  closeDeletePlayerModal();
+  mutate(r => {
+    const p = r.players.find(x => x.id === delId);
+    if (!r.removedPlayers) r.removedPlayers = [];
+    if (p && !r.removedPlayers.includes(p.name.toLowerCase())) r.removedPlayers.push(p.name.toLowerCase());
+    r.players = r.players.filter(x => x.id !== delId);
+  });
+}
+
+function closeDeletePlayerModal() {
+  document.getElementById('deletePlayerModal').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+// ================================================================
+// CLOSE MODALS ON OVERLAY CLICK
+// ================================================================
+
+['gameModal','playerModal','detailModal','deletePlayerModal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) {
+    if (e.target === this) {
+      this.classList.remove('open');
+      pendingDeleteId = null;
+    }
+  });
+});
+
+// ================================================================
+// RENDER ALL
+// ================================================================
+
+// ================================================================
+// RENDER: SCORER DES LETZTEN SPIELS
+// ================================================================
+function renderLastGameScorers() {
+  const targets = [
+    document.getElementById('lastGameScorers'),
+    document.getElementById('lastGameScorersTab')
+  ].filter(Boolean);
+  if (targets.length === 0) return;
+
+  if (db.games.length === 0) {
+    const empty = `<div class="scorer-panel"><div class="scorer-header"><div class="sh-meta">Letztes Spiel</div><div class="scorer-matchup" style="color:var(--muted)">–</div></div><div class="scorer-empty">Noch keine Spiele eingetragen.</div></div>`;
+    targets.forEach(el => el.innerHTML = empty);
+    return;
+  }
+
+  const sorted = [...db.games].sort((a,b) => b.date.localeCompare(a.date));
+  const game = sorted[0];
+  const r = gameResult(game);
+  const badges = {W:'rb-W',L:'rb-L',D:'rb-D',F:'rb-F'};
+  const labels = {W:'SIEG',L:'NIEDERLAGE',D:'UNENTSCHIEDEN',F:'FORFAIT'};
+
+  const scorers = [];
+  for (const p of db.players) {
+    if (p.pos === 'TH') continue;
+    const ps = game.playerStats && game.playerStats[p.id];
+    if (!ps || !ps.played) continue;
+    const g = ps.g || 0, a = ps.a || 0;
+    if (g === 0 && a === 0) continue;
+    scorers.push({ name: p.name, nr: p.nr, g, a, pts: g + a });
+  }
+  scorers.sort((a,b) => b.pts - a.pts || b.g - a.g);
+
+  const rows = scorers.length === 0
+    ? `<div class="scorer-empty">Keine Scorer eingetragen</div>`
+    : scorers.map((s, i) => `
+        <div class="scorer-row">
+          <div class="scorer-rank">${i === 0 ? '⭐' : i + 1}</div>
+          <div class="scorer-name"><small>#${s.nr}</small> ${s.name}</div>
+          <div class="scorer-pts">
+            ${s.g > 0 ? `<span class="scorer-g">${s.g}T</span>` : ''}
+            ${s.a > 0 ? `<span class="scorer-a">${s.a}A</span>` : ''}
+            <span class="scorer-total">${s.pts} Pts</span>
+          </div>
+        </div>`).join('');
+
+  const html = `
+    <div class="scorer-panel">
+      <div class="scorer-header">
+        <div class="sh-meta">Letztes Spiel · ${formatDate(game.date)}</div>
+        <div class="scorer-matchup">
+          ${game.home}
+          <span style="color:var(--gold);font-size:1.25rem;font-weight:900;">${game.goalsH}:${game.goalsA}</span>
+          ${game.away}
+        </div>
+        <span class="rb ${badges[r]}">${labels[r]}</span>
+      </div>
+      <div class="scorer-title">⭐ Scorer des Spiels</div>
+      <div class="scorer-list">${rows}</div>
+    </div>`;
+
+  targets.forEach(el => el.innerHTML = html);
+}
+
+function renderAll() {
+  renderSummary();
+  renderStats();
+  renderGames();
+  renderLastGameScorers();
+  renderRoster();
+  // Only re-render top if tab is active
+  if (document.getElementById('tab-top').classList.contains('active')) {
+    renderTop();
+  }
+}
+
+// ================================================================
+// LIGA TABLE
+// ================================================================
+
+const ZEP_URL = 'https://www.zep.ch/index.php?target=saison';
+const LIGA_CACHE_KEY = 'ehc_liga_cache_2627';
+const TEAM_NAME = 'swissair';
+// Adresse des Cloudflare Workers (nach dem Einrichten hier eintragen, z.B. 'https://zep.DEINNAME.workers.dev')
+const LIGA_PROXY_URL = 'WORKER_URL_HIER_EINTRAGEN';
+
+function showTab(id, btn) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  if (id==='tab-top') renderTop();
+  if (id==='tab-liga') initLiga();
+}
+
+let ligaInitialized = false;
+let ligaFetchAttempted = false;
+
+function initLiga() {
+  // Try to load from local cache first
+  const cached = loadLigaCache();
+  if (cached && cached.rows && cached.rows.length > 0) {
+    renderLigaTable(cached.rows, cached.updatedAt);
+    // Refresh in background if older than 6h
+    const ageH = (Date.now() - cached.ts) / 3600000;
+    if (ageH > 6 && !ligaFetchAttempted) fetchLigaData();
+  } else if (!ligaInitialized) {
+    ligaInitialized = true;
+    fetchLigaData();
+  }
+}
+
+function loadLigaCache() {
+  try {
+    const raw = localStorage.getItem(LIGA_CACHE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e){}
+  return null;
+}
+
+function saveLigaCache(rows) {
+  const now = new Date();
+  const obj = {
+    ts: Date.now(),
+    updatedAt: now.toLocaleDateString('de-CH') + ' ' + now.toLocaleTimeString('de-CH', {hour:'2-digit',minute:'2-digit'}),
+    rows
+  };
+  localStorage.setItem(LIGA_CACHE_KEY, JSON.stringify(obj));
+  return obj;
+}
+
+async function fetchLigaData() {
+  ligaFetchAttempted = true;
+  document.getElementById('ligaRefreshBtn').textContent = '⏳ Lädt…';
+  document.getElementById('ligaRefreshBtn').disabled = true;
+
+  // Try CORS proxy approaches
+  const proxies = [
+    ...(LIGA_PROXY_URL.startsWith('https://') ? [LIGA_PROXY_URL] : []),
+    `https://api.allorigins.win/get?url=${encodeURIComponent(ZEP_URL)}`,
+    `https://corsproxy.io/?${encodeURIComponent(ZEP_URL)}`,
+  ];
+
+  let html = null;
+  for (const proxy of proxies) {
+    try {
+      const res = await fetch(proxy, {signal: AbortSignal.timeout(8000)});
+      if (!res.ok) continue;
+      const data = await res.json().catch(() => null);
+      if (data && data.contents) { html = data.contents; break; }
+      // corsproxy.io returns raw HTML
+      const text = await res.text().catch(() => null);
+      if (text && text.includes('<table')) { html = text; break; }
+    } catch(e) { continue; }
+  }
+
+  document.getElementById('ligaRefreshBtn').textContent = '↻ Aktualisieren';
+  document.getElementById('ligaRefreshBtn').disabled = false;
+
+  if (html) {
+    const rows = parseZepTable(html);
+    if (rows && rows.length > 0) {
+      const cached = saveLigaCache(rows);
+      renderLigaTable(rows, cached.updatedAt);
+      return;
+    }
+  }
+
+  // Proxy failed — show iframe fallback
+  const cached = loadLigaCache();
+  if (cached && cached.rows && cached.rows.length > 0) {
+    renderLigaTable(cached.rows, cached.updatedAt + ' (gecacht)');
+  } else {
+    showLigaFallback();
+  }
+}
+
+function parseZepTable(html) {
+  // Parse the HTML string and look for Gruppe A standings table
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Find all tables
+  const tables = doc.querySelectorAll('table');
+  let gruppeATable = null;
+
+  // Strategy 1: find "Gruppe A" text near a table
+  for (const el of doc.querySelectorAll('*')) {
+    const txt = el.textContent || '';
+    if (/Gruppe\s*A/i.test(txt) && el.tagName !== 'BODY' && el.tagName !== 'HTML') {
+      // Look for a table in the next siblings or within
+      let node = el;
+      for (let i=0; i<8; i++) {
+        node = node.nextElementSibling || node.parentElement?.nextElementSibling;
+        if (!node) break;
+        const t = node.tagName === 'TABLE' ? node : node.querySelector('table');
+        if (t) { gruppeATable = t; break; }
+      }
+      if (gruppeATable) break;
+    }
+  }
+
+  // Strategy 2: just take the largest table
+  if (!gruppeATable && tables.length > 0) {
+    gruppeATable = [...tables].sort((a,b) => b.rows.length - a.rows.length)[0];
+  }
+
+  if (!gruppeATable) return null;
+
+  const rows = [];
+  for (const tr of gruppeATable.querySelectorAll('tr')) {
+    const cells = [...tr.querySelectorAll('td,th')].map(c => c.textContent.trim());
+    if (cells.length >= 4 && cells.some(c => c !== '')) rows.push(cells);
+  }
+  return rows;
+}
+
+function updateSummaryFromLiga(rows) {
+  return; // summary strip uses local games only
+  const header = rows[0].map(h => h.trim().toLowerCase());
+  const swissairRow = rows.slice(1).find(r => r.some(c => c.toLowerCase().includes(TEAM_NAME)));
+  if (!swissairRow) return;
+
+  // Helper: find column index by possible header names
+  const col = (...names) => {
+    for (const n of names) {
+      const i = header.findIndex(h => h === n || h.startsWith(n));
+      if (i >= 0) return i;
+    }
+    return -1;
+  };
+
+  const iSP  = col('sp','gp','spiele','g');
+  const iS   = col('s','siege','w');
+  const iN   = col('n','niederlagen','l');
+  const iU   = col('u','unentschieden','d','t');
+  const iT   = col('t','tore','goals');  // often "45:32" format
+  const iP   = col('p','pkt','punkte','pts');
+
+  const get = i => i >= 0 ? swissairRow[i] : null;
+
+  const sp  = parseInt(get(iSP)) || null;
+  const w   = parseInt(get(iS))  || null;
+  const l   = parseInt(get(iN))  || null;
+  const d   = parseInt(get(iU))  || null;
+  const pts = parseInt(get(iP))  || null;
+
+  // Parse goals "GF:GA"
+  let gf = null, ga = null;
+  const tStr = get(iT);
+  if (tStr && tStr.includes(':')) {
+    const parts = tStr.split(':');
+    gf = parseInt(parts[0]) || null;
+    ga = parseInt(parts[1]) || null;
+  }
+
+  if (sp  !== null) document.getElementById('s-sp').textContent  = sp;
+  if (w   !== null) document.getElementById('s-w').textContent   = w;
+  if (l   !== null) document.getElementById('s-l').textContent   = l;
+  if (d   !== null) document.getElementById('s-d').textContent   = d;
+  if (gf  !== null) document.getElementById('s-gf').textContent  = gf;
+  if (ga  !== null) document.getElementById('s-ga').textContent  = ga;
+  if (pts !== null) document.getElementById('s-pts').textContent = pts;
+}
+
+function renderLigaTable(rows, updatedAt) {
+  document.getElementById('ligaFrameWrap').style.display = 'none';
+  document.getElementById('ligaFallback').style.display = 'none';
+  document.getElementById('ligaCachedWrap').style.display = '';
+
+  const container = document.getElementById('ligaCachedTable');
+  if (!rows || rows.length === 0) {
+    container.innerHTML = '<div class="empty"><div class="ico">📋</div><p>Keine Tabellendaten vorhanden.</p></div>';
+    return;
+  }
+
+  // Detect header row
+  const header = rows[0];
+  const dataRows = rows.slice(1);
+
+  let html = '<table><thead><tr>';
+  for (const h of header) {
+    const isNum = /^(SP|S|N|U|T|P|GT|GA|\d)/.test(h);
+    html += `<th${isNum?' class="nr"':''}>${h}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+
+  for (const row of dataRows) {
+    const isTeam = row.some(c => c.toLowerCase().includes(TEAM_NAME));
+    html += `<tr${isTeam?' class="hl"':''}>`;
+    for (let i=0; i<row.length; i++) {
+      const isNum = i > 1 && /^\d/.test(row[i]);
+      const isName = i === 2 || (header[i] && /team|name|mannschaft/i.test(header[i]));
+      let cls = isNum ? ' class="nr"' : isName ? ' class="team-name"' : '';
+      html += `<td${cls}>${row[i]}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  container.innerHTML = html;
+
+  document.getElementById('ligaLastUpdate').textContent =
+    updatedAt ? `Zuletzt aktualisiert: ${updatedAt} · Quelle: zep.ch` : '';
+
+  updateSummaryFromLiga(rows);
+}
+
+function showLigaFallback() {
+  document.getElementById('ligaCachedWrap').style.display = 'none';
+  document.getElementById('ligaFrameWrap').style.display = 'none';
+  document.getElementById('ligaFallback').style.display = 'flex';
+}
+
+function onIframeLoad() {
+  // iframe loaded — hide fallback
+  document.getElementById('ligaFallback').style.display = 'none';
+}
+
+function onIframeError() { showLigaFallback(); }
+
+function refreshLiga() {
+  ligaFetchAttempted = false;
+  fetchLigaData();
+}
+
+// ================================================================
+// INIT
+// ================================================================
+
+// Set default sort header highlight
+const skaterTbl = document.getElementById('skaterTable');
+skaterTbl.querySelectorAll('thead th').forEach(th => {
+  if ((th.getAttribute('onclick')||'').includes("'pts'")) th.classList.add('s-desc');
+});
+</script>
+</body>
+</html>
