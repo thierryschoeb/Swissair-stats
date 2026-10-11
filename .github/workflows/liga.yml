@@ -1,0 +1,23 @@
+name: Liga-Tabelle aktualisieren
+on:
+  schedule:
+    - cron: '0 */3 * * *'   # alle 3 Stunden
+  workflow_dispatch:         # manuell startbar
+permissions:
+  contents: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ZEP-Seite laden
+        run: |
+          curl -sSL --fail -A "Mozilla/5.0 (compatible; EHCSwissairStats/1.0)" "https://www.zep.ch/index.php?target=saison" -o zep.html
+          python3 -c "import json;print(json.dumps({'contents':open('zep.html',encoding='utf-8',errors='replace').read()}))" > liga.json
+          rm zep.html
+      - name: Speichern
+        run: |
+          git config user.name "liga-bot"
+          git config user.email "liga-bot@users.noreply.github.com"
+          git add liga.json
+          git diff --staged --quiet || (git commit -m "Liga-Tabelle aktualisiert" && git push)
